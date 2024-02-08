@@ -10,6 +10,7 @@ import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import org.json.JSONObject
 import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
@@ -22,18 +23,25 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         // Make API call
-        val url = "https://rickandmortyapi.com/api/character/1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20"
+        val url = "https://rickandmortyapi.com/api/character"
         val request = Request.Builder().url(url).build()
 
         OkHttpClient().newCall(request).enqueue(object : Callback {
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string()
-                val characters = Gson().fromJson(responseBody, Array<Character>::class.java).toList()
+                try {
+                    val responseJson = JSONObject(responseBody)
+                    val resultsJsonArray = responseJson.getJSONArray("results")
 
-                runOnUiThread {
-                    // Populate the RecyclerView with the characters
-                    val adapter = CharacterAdapter(this@MainActivity, characters)
-                    recyclerView.adapter = adapter
+                    val characters = Gson().fromJson(resultsJsonArray.toString(), Array<Character>::class.java).toList()
+
+                    runOnUiThread {
+                        // Populate the RecyclerView with the characters
+                        val adapter = CharacterAdapter(this@MainActivity, characters)
+                        recyclerView.adapter = adapter
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
 
